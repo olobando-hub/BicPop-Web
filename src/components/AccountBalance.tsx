@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, Plus, CreditCard } from 'lucide-react';
+import { Wallet, Plus, CreditCard, DollarSign } from 'lucide-react';
 
 interface AccountBalanceProps {
   balance: number;
@@ -13,40 +13,39 @@ interface AccountBalanceProps {
 }
 
 export default function AccountBalance({ balance, onAddFunds }: AccountBalanceProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [amount, setAmount] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
+  const [isAddFundsOpen, setIsAddFundsOpen] = useState(false);
+  const [addAmount, setAddAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const predefinedAmounts = [10000, 25000, 50000, 100000];
 
   const handleAddFunds = async () => {
-    const fundAmount = parseInt(amount);
-    if (!fundAmount || fundAmount < 1000) {
-      alert('El monto mínimo es $1,000');
-      return;
+    const amount = parseInt(addAmount.replace(/[^\d]/g, ''));
+    if (amount && amount > 0) {
+      setIsProcessing(true);
+      
+      // Simulate processing time
+      setTimeout(() => {
+        onAddFunds(amount);
+        setAddAmount('');
+        setIsAddFundsOpen(false);
+        setIsProcessing(false);
+      }, 1500);
     }
+  };
 
-    if (!cardNumber || !expiryDate || !cvv) {
-      alert('Por favor completa todos los campos de la tarjeta');
-      return;
-    }
+  const handlePredefinedAmount = (amount: number) => {
+    setAddAmount(amount.toString());
+  };
 
-    setIsProcessing(true);
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      onAddFunds(fundAmount);
-      setIsProcessing(false);
-      setIsOpen(false);
-      setAmount('');
-      setCardNumber('');
-      setExpiryDate('');
-      setCvv('');
-      alert(`¡Fondos agregados exitosamente! +$${fundAmount.toLocaleString()}`);
-    }, 2000);
+  const formatCurrency = (amount: string) => {
+    const numericValue = amount.replace(/[^\d]/g, '');
+    return numericValue ? parseInt(numericValue).toLocaleString() : '';
+  };
+
+  const handleAmountChange = (value: string) => {
+    const formatted = formatCurrency(value);
+    setAddAmount(formatted);
   };
 
   return (
@@ -54,112 +53,117 @@ export default function AccountBalance({ balance, onAddFunds }: AccountBalancePr
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Wallet className="h-5 w-5 text-emerald-600" />
-            <span>Saldo de Cuenta</span>
+            <div className="bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full p-2">
+              <Wallet className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-lg text-gray-900">Saldo de Cuenta</span>
           </div>
-          <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
-            ${balance.toLocaleString()}
+          <Badge variant="outline" className="bg-white border-emerald-300 text-emerald-700 font-semibold">
+            Activa
           </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-600">
-            Usa tu saldo para pagar alquileres de forma rápida
-          </p>
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-3xl font-bold text-emerald-700 mb-1">
+              ${balance.toLocaleString()}
+            </div>
+            <p className="text-sm text-gray-600">COP disponibles</p>
+          </div>
+          
+          <Dialog open={isAddFundsOpen} onOpenChange={setIsAddFundsOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600">
-                <Plus className="h-4 w-4 mr-1" />
+              <Button 
+                className="bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+              >
+                <Plus className="h-4 w-4 mr-2" />
                 Agregar Fondos
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle className="flex items-center space-x-2">
-                  <Wallet className="h-5 w-5" />
+                  <DollarSign className="h-5 w-5 text-emerald-600" />
                   <span>Agregar Fondos</span>
                 </DialogTitle>
               </DialogHeader>
               
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="amount">Monto a Agregar</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    placeholder="10000"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    min="1000"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Monto mínimo: $1,000</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {predefinedAmounts.map((preAmount) => (
-                    <Button
-                      key={preAmount}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAmount(preAmount.toString())}
-                      className="text-sm"
-                    >
-                      ${preAmount.toLocaleString()}
-                    </Button>
-                  ))}
-                </div>
-
-                <div className="border-t pt-4">
-                  <h4 className="font-medium mb-3 flex items-center space-x-2">
-                    <CreditCard className="h-4 w-4" />
-                    <span>Información de Pago</span>
-                  </h4>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="addCardNumber">Número de Tarjeta</Label>
-                      <Input
-                        id="addCardNumber"
-                        placeholder="1234 5678 9012 3456"
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value)}
-                        maxLength={19}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label htmlFor="addExpiry">MM/AA</Label>
-                        <Input
-                          id="addExpiry"
-                          placeholder="12/25"
-                          value={expiryDate}
-                          onChange={(e) => setExpiryDate(e.target.value)}
-                          maxLength={5}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="addCvv">CVV</Label>
-                        <Input
-                          id="addCvv"
-                          placeholder="123"
-                          value={cvv}
-                          onChange={(e) => setCvv(e.target.value)}
-                          maxLength={4}
-                        />
-                      </div>
-                    </div>
+              <div className="space-y-6">
+                {/* Current Balance */}
+                <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-emerald-700 font-medium">Saldo actual:</span>
+                    <span className="font-bold text-emerald-800 text-lg">${balance.toLocaleString()}</span>
                   </div>
                 </div>
 
-                <div className="flex space-x-3 pt-4">
-                  <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
+                {/* Quick Amount Selection */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    Montos rápidos:
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {predefinedAmounts.map((amount) => (
+                      <Button
+                        key={amount}
+                        variant="outline"
+                        onClick={() => handlePredefinedAmount(amount)}
+                        className="text-sm hover:bg-emerald-50 hover:border-emerald-300"
+                      >
+                        ${amount.toLocaleString()}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Amount */}
+                <div>
+                  <Label htmlFor="amount" className="text-sm font-medium text-gray-700 mb-2 block">
+                    Monto personalizado:
+                  </Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="amount"
+                      placeholder="0"
+                      value={addAmount}
+                      onChange={(e) => handleAmountChange(e.target.value)}
+                      className="pl-10 text-right font-mono text-lg"
+                    />
+                  </div>
+                  {addAmount && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Nuevo saldo: ${(balance + parseInt(addAmount.replace(/[^\d]/g, '') || '0')).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+
+                {/* Payment Method Info */}
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <CreditCard className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900">Método de pago</span>
+                  </div>
+                  <p className="text-xs text-blue-700">
+                    Los fondos se agregarán instantáneamente usando tu método de pago preferido.
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddFundsOpen(false)}
+                    className="flex-1"
+                    disabled={isProcessing}
+                  >
                     Cancelar
                   </Button>
                   <Button
                     onClick={handleAddFunds}
-                    disabled={isProcessing}
-                    className="flex-1 bg-emerald-500 hover:bg-emerald-600"
+                    disabled={!addAmount || parseInt(addAmount.replace(/[^\d]/g, '') || '0') <= 0 || isProcessing}
+                    className="flex-1 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white font-semibold"
                   >
                     {isProcessing ? 'Procesando...' : 'Agregar Fondos'}
                   </Button>
